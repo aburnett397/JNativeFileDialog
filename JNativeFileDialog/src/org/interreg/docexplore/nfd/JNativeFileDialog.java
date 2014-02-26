@@ -287,7 +287,7 @@ public class JNativeFileDialog
 			byte [] lib = null;
 			String extension = null;
 			
-			File dir = new File(".nfd");
+			File dir = new File(System.getProperty("user.home")+"/.jnativefiledialog");
 			dir.mkdirs();
 			String os = System.getProperty("os.name");
 			
