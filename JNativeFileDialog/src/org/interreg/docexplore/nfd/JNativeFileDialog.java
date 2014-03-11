@@ -284,7 +284,6 @@ public class JNativeFileDialog
 		
 		if (!noNative) try
 		{
-			byte [] lib = null;
 			String extension = null;
 			
 			File dir = new File(System.getProperty("user.home")+"/.jnativefiledialog");
@@ -294,27 +293,33 @@ public class JNativeFileDialog
 			if (os.toLowerCase().contains("win"))
 			{
 				extension = "dll";
-				String arch = System.getProperty("os.arch");
-				arch = arch == null ? "" : arch;
-				if (os.toLowerCase().contains("64") || arch.toLowerCase().contains("64"))
-					lib = readStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("org/interreg/docexplore/nfd/NativeFileDialog_x64.dll"));
-				else lib = readStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("org/interreg/docexplore/nfd/NativeFileDialog_x86.dll"));
+				canSelectFoldersNatively = false;
 			}
 			else if (os.toLowerCase().contains("mac"))
 			{
 				extension = "dylib";
-				lib = readStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("org/interreg/docexplore/nfd/libNativeFileDialog.dylib"));
 				canSelectFoldersNatively = true;
 			}
 			
-			if (lib != null)
+			File libFile = new File(dir, "libNativeFileDialog."+extension);
+			if (!libFile.exists())
 			{
-				File libFile = new File(dir, "libNativeFileDialog."+extension);
-				//if (!libFile.exists())
+				byte [] lib = null;
+				if (os.toLowerCase().contains("win"))
+				{
+					String arch = System.getProperty("os.arch");
+					arch = arch == null ? "" : arch;
+					if (os.toLowerCase().contains("64") || arch.toLowerCase().contains("64"))
+						lib = readStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("org/interreg/docexplore/nfd/NativeFileDialog_x64.dll"));
+					else lib = readStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("org/interreg/docexplore/nfd/NativeFileDialog_x86.dll"));
+				}
+				else if (os.toLowerCase().contains("mac"))
+					lib = readStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("org/interreg/docexplore/nfd/libNativeFileDialog.dylib"));
+				if (lib != null)
 					writeFile(libFile, lib);
-				NativeLibrary.addSearchPath("NativeFileDialog", dir.getCanonicalPath());
-				nfd = (NFD)Native.loadLibrary("NativeFileDialog", NFD.class);
 			}
+			NativeLibrary.addSearchPath("NativeFileDialog", dir.getAbsolutePath());
+			nfd = (NFD)Native.loadLibrary("NativeFileDialog", NFD.class);
 		}
 		catch (Throwable e) {e.printStackTrace();}
 		
