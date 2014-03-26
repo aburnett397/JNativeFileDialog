@@ -277,7 +277,8 @@ public class JNativeFileDialog
 	 * Extracts and loads the necessary native library. This is called automatically when first needed but can be called manually to reduce the loading time 
 	 * when the first dialog is shown (a good idea at program startup).
 	 */
-	public static void init()
+	public static void init() {init(true);}
+	public static void init(boolean retry)
 	{
 		if (inited)
 			return;
@@ -302,8 +303,10 @@ public class JNativeFileDialog
 			}
 			
 			File libFile = new File(dir, "libNativeFileDialog."+extension);
+			boolean exists = true;
 			if (!libFile.exists())
 			{
+				exists = false;
 				byte [] lib = null;
 				if (os.toLowerCase().contains("win"))
 				{
@@ -319,7 +322,14 @@ public class JNativeFileDialog
 					writeFile(libFile, lib);
 			}
 			NativeLibrary.addSearchPath("NativeFileDialog", dir.getAbsolutePath());
-			nfd = (NFD)Native.loadLibrary("NativeFileDialog", NFD.class);
+			try {nfd = (NFD)Native.loadLibrary("NativeFileDialog", NFD.class);}
+			catch (Throwable e)
+			{
+				System.out.println(exists+" "+retry);
+				if (exists && retry && libFile.delete())
+					init(false);
+				else e.printStackTrace();
+			}
 		}
 		catch (Throwable e) {e.printStackTrace();}
 		
